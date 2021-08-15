@@ -1,6 +1,6 @@
-# Laravel template api
+# Laravel template ecommerce api
 
-- Um template dedicado para apis usando laravel
+- Um template dedicado para apis de ecommerce usando laravel
 
 ## Instalação
 
