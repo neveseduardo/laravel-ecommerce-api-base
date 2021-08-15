@@ -17,7 +17,9 @@ class Category extends Model
 	];
 
 	public function products () {
-		return $this->hasMany(\App\Models\Product::class);
+		$instance = $this->hasMany(\App\Models\Product::class);
+		$instance->getQuery()->where('active', 1)->get();
+		return $instance;
 	}
 
 	public function user () {

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\Category;
+use DB;
 
 class CategoriesController extends Controller
 {
@@ -16,28 +16,8 @@ class CategoriesController extends Controller
 	 */
 	public function index()
 	{
-		$categories = Category::where('active', 1)->get();
-		foreach ($categories as $category) {
-			$category->products();
-		}
-		return response()->json(['response' => $categories], Response::HTTP_OK);
-	}
-
-	/**
-	 * Store a newly created resource in storage.
-	 *
-	 * @param  \Illuminate\Http\Request  $request
-	 * @return \Illuminate\Http\Response
-	 */
-	public function store()
-	{
-		request()->validate([
-			'name' => ['required', 'string'],
-			'description' => ['sometimes', 'string'],
-		]);
-		request()->user_id = request()->user()->id;
-		$category = Category::create(request()->only(['name', 'description', 'user_id']));
-		return response()->json(['response' => $category], Response::HTTP_OK);
+		$categorys = Category::with('products')->with('user')->where('active', 1)->get();
+		return response()->json(['response' => $categorys, 'count' => $categorys->count()], Response::HTTP_OK);
 	}
 
 	/**
@@ -48,7 +28,29 @@ class CategoriesController extends Controller
 	 */
 	public function show($id)
 	{
-		return response()->json(['response' => Category::findOrFail($id)], Response::HTTP_OK);
+		$category = Category::with('products')->with('user')->findOrFail($id);
+		return response()->json(['response' => $category], Response::HTTP_OK);
+	}
+
+	/**
+	 * Store a newly created resource in storage.
+	 *
+	 * @param  \Illuminate\Http\Request  $request
+	 * @return \Illuminate\Http\Response
+	 */
+	public function store()
+	{
+		DB::beginTransaction();
+		try {
+			request()->validate(['name' => ['required', 'string']]);
+			$data = request()->only(['name', 'description']);
+			$data['user_id'] = request()->user()->id;
+			$category = Category::create($data);
+			DB::commit();
+			return response()->json(['response' => $category], Response::HTTP_OK);
+		} catch (Exception $e) {
+			DB::rollback();
+		}
 	}
 
 	/**
@@ -60,12 +62,16 @@ class CategoriesController extends Controller
 	 */
 	public function update($id)
 	{
-		request()->validate([
-			'name' => ['required', 'string'],
-			'description' => ['required', 'string'],
-		]);
-		$category = Category::where('id', $id)->update(request()->only(['name', 'description']));
-		return response()->json(['response' => $category], Response::HTTP_OK);
+		DB::beginTransaction();
+		try {
+			request()->validate(['name' => ['required']]);
+			$category = Category::findOrFail($id);
+			$category->update(request()->only(['name']));
+			DB::commit();
+			return response()->json(['response' => $category], Response::HTTP_OK);
+		} catch (Exception $e) {
+			DB::rollback();
+		}
 	}
 
 	/**
@@ -74,9 +80,16 @@ class CategoriesController extends Controller
 	 * @param  int  $id
 	 * @return \Illuminate\Http\Response
 	 */
-	public function destroy($id)
+	public function delete($id)
 	{
-		$category = Category::where('id', $id)->update(['active' => 0]);
-		return response()->json(['response' => $category], Response::HTTP_OK);
+		DB::beginTransaction();
+		try {
+			Category::findOrFail($id)->update(['active' => 0]);
+			\App\Models\Product::where('cod_category', $id)->update(['active' => 0]);
+			DB::commit();
+			return response()->json(['response' => 'Desativado com sucesso.'], Response::HTTP_OK);
+		} catch (Exception $e) {
+			DB::rollback();
+		}
 	}
 }
