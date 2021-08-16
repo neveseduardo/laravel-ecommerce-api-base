@@ -1,6 +1,8 @@
 /node_modules
 /public/hot
 /public/storage
+/public/files/images/products/*.jpg
+/public/files/images/products/*.png
 /vendor
 .env.backup
 .phpunit.result.cache
