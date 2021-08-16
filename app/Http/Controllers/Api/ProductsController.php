@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\FileHelper;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\Product;
 use DB;
@@ -48,19 +47,20 @@ class ProductsController extends Controller
 				'title' 		=> ['required', 'string'],
 				'price' 		=> ['required'],
 				'quantity' 		=> ['required'],
-				'image' 		=> ['sometimes', 'image', 'mimes:jpeg,bmp,png,gif', 'max:2048'],
 				'category_id' 	=> ['required'],
+                'images.*'      => ['sometimes', 'image', 'mimes:jpeg,png', 'max:2048'],
 			]);
-
-			$data = request()->only(['title', 'description', 'price', 'quantity', 'image', 'category_id']);
+			$data = request()->only(['title', 'description', 'price', 'quantity','category_id']);
 			$data['user_id'] = request()->user()->id;
 			$images = [];
-			if (request()->hasFile('image')) {
-				foreach (request()->file('image') as $file) {
-					$images[] = FileHelper::fileUpload($file, null, null, 'products');
+			if (request()->hasFile('images')) {
+				foreach (request()->file('images') as $file) {
+					$images[] = FileHelper::uploadFile($file, null, null, 'files/images/products');
 				}
 			}
-			$data['image'] = implode(',', $images);
+            if (count($images) > 0) {
+                $data['images'] = implode(',', $images);
+            }
 			$product = Product::create($data);
 			DB::commit();
 			return response()->json(['response' => $product], Response::HTTP_OK);
@@ -85,18 +85,20 @@ class ProductsController extends Controller
 				'title' 		=> ['required'],
 				'price' 		=> ['required'],
 				'quantity' 		=> ['required'],
-				'image' 		=> ['sometimes', 'image', 'mimes:jpeg,bmp,png,gif', 'max:2048'],
+				'images.*' 		=> ['sometimes', 'image', 'mimes:jpeg,png', 'max:2048'],
 				'category_id' 	=> ['required'],
 			]);
 			$product = Product::findOrFail($id);
-			$data = request()->only(['title', 'description', 'price', 'quantity', 'image', 'category_id']);
+			$data = request()->only(['title', 'description', 'price', 'quantity', 'category_id']);
 			$images = [];
-			if (request()->hasFile('image')) {
-				foreach (request()->file('image') as $file) {
+			if (request()->hasFile('images')) {
+				foreach (request()->file('images') as $file) {
 					$images[] = FileHelper::fileUpload($file, null, null, 'products');
 				}
 			}
-			$data['image'] = implode(',', $images);
+			if (count($images) > 0) {
+                $data['images'] = implode(',', $images);
+            }
 			$product->update($data);
 			DB::commit();
 			return response()->json(['response' => $product], Response::HTTP_OK);
