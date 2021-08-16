@@ -93,7 +93,7 @@ class ProductsController extends Controller
 			$images = [];
 			if (request()->hasFile('images')) {
 				foreach (request()->file('images') as $file) {
-					$images[] = FileHelper::fileUpload($file, null, null, 'products');
+					$images[] = FileHelper::fileUpload($file, null, null, 'files/images/products');
 				}
 			}
 			if (count($images) > 0) {
