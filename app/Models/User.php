@@ -21,6 +21,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'cpf',
+        'cnpj',
+        'phone_number',
+        'image'
     ];
 
     /**
@@ -41,4 +45,24 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Get the address associated with the user.
+     *
+     * @return array
+     */
+    public function adresses()
+    {
+       return $this->hasMany(\App\Models\Address::class);
+    }
+
+    /**
+     * Get the like associated with the user.
+     *
+     * @return array
+     */
+    public function likes()
+    {
+        return $this->hasMany(\App\Models\Like::class);
+    }
 }
